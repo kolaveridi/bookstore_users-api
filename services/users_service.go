@@ -1,11 +1,15 @@
 package services
 
 import (
+	"github.com/kolaveridi/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/kolaveridi/bookstore_users-api/domain/users"
 	"github.com/kolaveridi/bookstore_users-api/utils/errors"
 )
 
 func GetUser(userId int64) (*users.User, *errors.RestError) {
+	if err := users_db.Client.Ping(); err != nil {
+		panic(err)
+	}
 	if userId <= 0 {
 		return nil, errors.NewBadRequestError("invalid user id")
 	}
