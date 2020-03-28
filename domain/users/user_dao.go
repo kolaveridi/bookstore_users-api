@@ -49,6 +49,11 @@ func (user *User) Save() *errors.RestError {
 		if !ok {
 			return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
 		}
+		switch sqlErr.Number {
+		case 1062:
+			return errors.NewBadRequestError(fmt.Sprintf("error when trying to save user: %s", saveErr.Error()))
+
+		}
 		fmt.Println(sqlErr.Number)
 		fmt.Println(sqlErr.Message)
 
