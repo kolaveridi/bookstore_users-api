@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	"github.com/go-sql-driver/mysql"
 	"github.com/kolaveridi/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/kolaveridi/bookstore_users-api/utils/date_utils"
 	"github.com/kolaveridi/bookstore_users-api/utils/errors"
@@ -42,15 +43,17 @@ func (user *User) Save() *errors.RestError {
 	}
 	defer stmt.Close()
 	user.DateCreated = date_utils.GetNowString()
-	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
-	if err != nil {
-		if strings.Contains(err.Error(), "email_UNIQUE") {
-			return errors.NewBadRequestError(
-				fmt.Sprintf("email %s already exits", err.Error()))
-
+	insertResult, saveErr := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
+	if saveErr != nil {
+		sqlErr, ok := saveErr.(*mysql.MySQLError)
+		if !ok {
+			return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
 		}
+		fmt.Println(sqlErr.Number)
+		fmt.Println(sqlErr.Message)
+
 		return errors.NewInternalServerError(
-			fmt.Sprintf("error when trying to save user: %s", err.Error()))
+			fmt.Sprintf("error when trying to save user: %s", saveErr.Error()))
 	}
 	userId, err := insertResult.LastInsertId()
 	if err != nil {
