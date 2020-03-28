@@ -3,11 +3,13 @@ package users
 import (
 	"fmt"
 	"github.com/kolaveridi/bookstore_users-api/datasources/mysql/users_db"
+	"github.com/kolaveridi/bookstore_users-api/utils/date_utils"
 	"github.com/kolaveridi/bookstore_users-api/utils/errors"
+	"strings"
 )
 
 const (
-	queryInsertUser = "INSERT INTO users(first_name,last_name,email,date_created) VALUES(?,?,?,?);"
+	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
 )
 
 var (
@@ -34,8 +36,14 @@ func (user *User) Save() *errors.RestError {
 		return errors.NewInternalServerError(err.Error())
 	}
 	defer stmt.Close()
+	user.DateCreated = date_utils.GetNowString()
 	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
 	if err != nil {
+		if strings.Contains(err.Error(), "email_UNIQUE") {
+			return errors.NewBadRequestError(
+				fmt.Sprintf("email %s already exits", err.Error()))
+
+		}
 		return errors.NewInternalServerError(
 			fmt.Sprintf("error when trying to save user: %s", err.Error()))
 	}
